@@ -2,7 +2,8 @@
 <html lang="en" dir="ltr">
     <head>
         <meta charset="utf-8">
-        <title></title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PI4-Resource-Tracker</title>
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,61 +14,100 @@
         <style>
             :root {
                 font-family: "Open Sans", "sans-serif";
+                --background-color: #2a3037;
             }
-            html, body { height: 100%; width: 100%; margin: 0; }
+            html, body {
+                height: 100%;
+                width: 100%;
+                margin: 0;
+                background: var(--background-color);
+            }
 
             .progress {
-                overflow: hidden;
+                --bar-color: #a8d08c;
                 position: relative;
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                border: solid white 1px;
+                color: white;
+                z-index: 1;
             }
 
             .progress::before {
                 content: "";
-                width: 100%;
+                left: 0;
+                width: var(--value);
                 height: 100%;
-                z-index: -1;
                 position: absolute;
-                right: var(--value);
-                background: pink;
+                background: var(--bar-color);
+                z-index: -1;
+            }
+            @media only screen and (min-width: 540px) {
+                .progress.vertical::before {
+                    width: 100%;
+                    bottom: 0;
+                    height: var(--value);
+                }
             }
 
-            .progress.vertical::before {
-                right: 0;
-                top: var(--value);
+            .progress.labeled::after {
+                content: attr(id);
+                position: absolute;
+                z-index: 1;
+                top: -1.5rem;
+                left: 1rem;
             }
 
             #grid {
                 display: grid;
+                box-sizing: border-box;
                 grid-template-areas:
-                    "cpu0 temp"
-                    "cpu1 temp"
-                    "cpu2 temp"
-                    "cpu3 temp";
-                grid-template-rows: repeat(4, 75px);
-                grid-template-columns: 1fr 100px;
-                grid-gap: 25px;
+                    "CPU0"
+                    "CPU1"
+                    "CPU2"
+                    "CPU3"
+                    "temp";
+                grid-template-rows: repeat(5, 75px);
+                grid-gap: 50px;
                 width: 100%;
                 height: 100%;
                 max-width: 960px;
                 margin: auto;
+                padding: 10px;
                 align-content: center;
             }
 
-            #cpu0 { grid-area: cpu0; }
-            #cpu1 { grid-area: cpu1; }
-            #cpu2 { grid-area: cpu2; }
-            #cpu3 { grid-area: cpu3; }
+            @media only screen and (min-width:540px) {
+                #grid {
+                    grid-template-areas:
+                        "CPU0 temp"
+                        "CPU1 temp"
+                        "CPU2 temp"
+                        "CPU3 temp";
+                    grid-template-rows: repeat(4, 75px);
+                    grid-template-columns: 1fr 100px;
+                }
+            }
+
+            #CPU0 { grid-area: CPU0; }
+            #CPU1 { grid-area: CPU1; }
+            #CPU2 { grid-area: CPU2; }
+            #CPU3 { grid-area: CPU3; }
             #temperature { grid-area: temp; }
         </style>
+
         <div id="grid">
-            <div id="cpu0" class="progress" min="0" max="100" units="%"></div>
-            <div id="cpu1" class="progress" min="0" max="100" units="%"></div>
-            <div id="cpu2" class="progress" min="0" max="100" units="%"></div>
-            <div id="cpu3" class="progress" min="0" max="100" units="%"></div>
-            <div id="temperature" class="progress vertical" min="40" max="60" units="°C"></div>
+            <div id="CPU0" class="progress labeled" min="0" max="100" units="%"></div>
+            <div id="CPU1" class="progress labeled" min="0" max="100" units="%"></div>
+            <div id="CPU2" class="progress labeled" min="0" max="100" units="%"></div>
+            <div id="CPU3" class="progress labeled" min="0" max="100" units="%"></div>
+            <div id="temperature"
+                class="progress vertical"
+                min="40"
+                max="60"
+                units="°C"
+                style="--bar-color: #ed4f54;"></div>
         </div>
 
         <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
@@ -77,8 +117,8 @@
                 for (bar of progressBars) {
                     let min = bar.getAttribute("min");
                     let max = bar.getAttribute("max");
-                    let val = data[bar.id];
-                    let percent = Math.floor((1 - (val-min) / (max-min)) * 100) + "%";
+                    let val = data[bar.id.toLowerCase()];
+                    let percent = Math.floor((val-min) / (max-min) * 100) + "%";
                     bar.style.setProperty("--value", percent);
                     let text = val + bar.getAttribute("units");
                     bar.innerText = text;
