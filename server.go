@@ -5,12 +5,17 @@ import (
 	"log"
 	"net/http"
     "time"
+	"encoding/json"
+	"os"
 	socketio "github.com/googollee/go-socket.io"
 )
 
 const PORT string = "8080"
+var server string
 
 func main() {
+	config := ParseConfig()
+
     var cpuUsage [4]int
     MonitorCpuUsage(&cpuUsage)
 
@@ -49,7 +54,24 @@ func main() {
 
 	http.Handle("/socket.io/", server)
 	http.Handle("/", http.FileServer(http.Dir("./static")))
-	log.Println("Serving at localhost:"+PORT+"...")
-	log.Fatal(http.ListenAndServe("127.0.0.1:" + PORT, nil))
-	// log.Fatal(http.ListenAndServe("192.168.1.109:" + PORT, nil))
+	log.Println("Serving at "+config.Server.GetURL()+"...")
+	log.Fatal(http.ListenAndServe(config.Server.GetURL(), nil))
+}
+
+type Config struct {
+	Server ServerInfo
+}
+
+type ServerInfo struct {
+	Host, Port string
+}
+func (server ServerInfo) GetURL() string {
+	return server.Host + ":" + server.Port
+}
+
+func ParseConfig() Config {
+	b,_ := os.ReadFile("config.json")
+	con := Config{}
+	json.Unmarshal([]byte(b), &con)
+	return con
 }
