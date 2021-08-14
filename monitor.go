@@ -73,6 +73,7 @@ func GetTempurature() float64 {
  */
 func MonitorNetworkUsage(recieved, sent *uint64) {
     go func() {
+        var totalRecieved, totalSent uin64
         for true {
             var r, s, x uint64
             var scan scanner.Scanner
@@ -100,8 +101,10 @@ func MonitorNetworkUsage(recieved, sent *uint64) {
                 skip(9)
             }
             defer file.Close()
-            *recieved = r
-            *sent = s
+            *recieved = r - totalRecieved
+            *sent = s - totalSent
+            totalRecieved = r
+            totalSent = s
             time.Sleep(time.Second * 1)
         }
     }()
