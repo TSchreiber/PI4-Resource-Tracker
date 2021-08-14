@@ -7,6 +7,8 @@ import (
     "strings"
     "bufio"
     "runtime"
+    "text/scanner"
+    "time"
 )
 
 /**
@@ -63,4 +65,44 @@ func GetTempurature() float64 {
     file.Close()
     milicelcius,_ := strconv.Atoi(string(bufTemp))
     return float64(milicelcius) / 1000.0
+}
+
+/**
+ * starts a goroutine that populates the provided variable with network usage
+ * data every second.
+ */
+func MonitorNetworkUsage(recieved, sent *uint64) {
+    go func() {
+        for true {
+            var r, s, x uint64
+            var scan scanner.Scanner
+            var file *os.File
+            if (runtime.GOOS == "windows") {
+                file, _ = os.Open("proc.net.dev")
+            } else {
+                file, _ = os.Open("/proc/net/dev")
+            }
+            scan.Init(file)
+            skip := func(count int) {
+                for i:=0; i<count; i++ {
+                    scan.Scan();
+                }
+            }
+            skip(27)
+            for i:=0; i<3; i++ {
+                scan.Scan()
+                x,_= strconv.ParseUint(scan.TokenText(), 10, 64)
+                r += uint64(x)
+                skip(7)
+                scan.Scan()
+                x,_= strconv.ParseUint(scan.TokenText(), 10, 64)
+                s += uint64(x)
+                skip(9)
+            }
+            defer file.Close()
+            *recieved = r
+            *sent = s
+            time.Sleep(time.Second * 1)
+        }
+    }()
 }
