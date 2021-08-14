@@ -73,7 +73,7 @@ func GetTempurature() float64 {
  */
 func MonitorNetworkUsage(recieved, sent *uint64) {
     go func() {
-        var totalRecieved, totalSent uin64
+        var totalRecieved, totalSent uint64
         for true {
             var r, s, x uint64
             var scan scanner.Scanner
