@@ -21,23 +21,11 @@ func main() {
 	MonitorNetworkUsage(&data.NetRecieved, &data.NetSent)
 	MonitorTemperature(&data.Temperature)
 
-    var cpuUsage [4]int
-    MonitorCpuUsage(&cpuUsage)
-
     sockets := make(map[string]socketio.Conn)
 
     go func() {
         for true {
             for _,s := range sockets {
-				/*
-                s.Emit("data", fmt.Sprintf("%c%c%c%c%c",
-                    int(cpuUsage[0] / 100),
-                    int(cpuUsage[1] / 100),
-                    int(cpuUsage[2] / 100),
-                    int(cpuUsage[3] / 100),
-                    int(GetTempurature())
-				))
-				*/
 				d,_ := json.Marshal(data)
 				s.Emit("data", d)
             }

@@ -44,12 +44,12 @@ func MonitorCpuUsage(cpuUsage *[4]int) {
 }
 
 /**
- * returns the tempurature reading from the hardwear measurement device. For
+ * returns the temperature reading from the hardwear measurement device. For
  * linux systems, this is located in the file,
  *     "/sys/class/thermal/thermal_zone0/temp"
  * For windows system, wmic needs to be used.
  */
-func GetTempurature() float64 {
+func GetTemperature() float64 {
     var file *os.File
     var err error
     if runtime.GOOS == "windows" {
@@ -70,7 +70,7 @@ func GetTempurature() float64 {
 func MonitorTemperature(temp *int) {
     go func() {
         for true {
-            *temp = int(GetTempurature())
+            *temp = int(GetTemperature())
             time.Sleep(1 * time.Second)
         }
     }()

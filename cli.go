@@ -31,7 +31,7 @@ func getPrintBuffer() string {
     }
     cpuLines := strings.Split(output, "\n")
     tempLines := strings.Split(
-        GetThermometer(int(GetTempurature())), "\n")
+        GetThermometer(int(Gettemperature())), "\n")
     output = ""
     for i:=0; i<12; i++ {
         output += cpuLines[i] + tempLines[i] + "\n"
