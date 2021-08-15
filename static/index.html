@@ -15,6 +15,7 @@
         <style>
             :root {
                 font-family: "Open Sans", "sans-serif";
+                color: white;
                 --background-color: #2a3037;
             }
             html, body {
@@ -31,8 +32,8 @@
                 justify-content: center;
                 align-items: center;
                 border: solid white 1px;
-                color: white;
                 z-index: 1;
+                margin: 1rem 0;
             }
 
             .progress::before {
@@ -60,6 +61,13 @@
                 left: 1rem;
             }
 
+            #Network {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-evenly;
+                font-size: 1.5rem;
+            }
+
             #grid {
                 display: grid;
                 box-sizing: border-box;
@@ -68,9 +76,10 @@
                     "CPU1"
                     "CPU2"
                     "CPU3"
-                    "temp";
+                    "temp"
+                    "net";
                 grid-template-rows: repeat(5, 75px);
-                grid-gap: 50px;
+                /* grid-gap: 50px; */
                 width: 100%;
                 height: 100%;
                 max-width: 960px;
@@ -82,12 +91,24 @@
             @media only screen and (min-width:540px) {
                 #grid {
                     grid-template-areas:
-                        "CPU0 temp"
-                        "CPU1 temp"
-                        "CPU2 temp"
-                        "CPU3 temp";
+                        "CPU0 temp net"
+                        "CPU1 temp net"
+                        "CPU2 temp net"
+                        "CPU3 temp net";
                     grid-template-rows: repeat(4, 75px);
-                    grid-template-columns: 1fr 100px;
+                    grid-template-columns: 1fr 100px auto;
+                }
+
+                #Network {
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                }
+                #NetRecieved { max-width: 9ch; }
+                #NetSent { max-width: 5ch; }
+
+                #temperature {
+                    margin: 1rem 0 1rem 25px;
                 }
             }
 
@@ -96,6 +117,7 @@
             #CPU2 { grid-area: CPU2; }
             #CPU3 { grid-area: CPU3; }
             #temperature { grid-area: temp; }
+            #Network { grid-area: net; }
         </style>
 
         <div id="grid">
@@ -109,34 +131,54 @@
                 max="60"
                 units="°C"
                 style="--bar-color: #ed4f54;"></div>
+            <div id="Network">
+                <div id="NetRecieved"></div>
+                <div id="NetSent"></div>
+            </div>
         </div>
 
         <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
         <script>
-            let progressBars = document.getElementsByClassName("progress");
-            function update(data) {
-                for (bar of progressBars) {
-                    let min = bar.getAttribute("min");
-                    let max = bar.getAttribute("max");
-                    let val = data[bar.id.toLowerCase()];
-                    let percent = Math.floor((val-min) / (max-min) * 100) + "%";
-                    bar.style.setProperty("--value", percent);
-                    let text = val + bar.getAttribute("units");
-                    bar.innerText = text;
+            let displayElements = {
+                "CPU" : [
+                    document.getElementById("CPU0"),
+                    document.getElementById("CPU1"),
+                    document.getElementById("CPU2"),
+                    document.getElementById("CPU3")
+                ],
+                "Temperature": document.getElementById("temperature"),
+                "Network": {
+                    "Recieved": document.getElementById("NetRecieved"),
+                    "Sent": document.getElementById("NetSent")
                 }
             }
 
             var socket = io();
             var enc = new TextEncoder();
-            socket.on("data", (data) => {
-                let a = enc.encode(data);
-                b = {};
-                b.cpu0 = a[0];
-                b.cpu1 = a[1];
-                b.cpu2 = a[2];
-                b.cpu3 = a[3];
-                b.temperature = a[4];
-                update(b);
+            socket.on("data", (b64data) => {
+                let data = JSON.parse(atob(b64data));
+                for (let i=0; i<data.CpuUsage.length; i++) {
+                    let val = Math.floor(data.CpuUsage[i] / 100) + "%";
+                    displayElements.CPU[i].style.setProperty("--value", val);
+                    displayElements.CPU[i].innerText = val;
+                }
+                displayElements.Temperature.style.setProperty("--value",
+                    Math.floor((data.Temperature - 40) / (60 - 40) * 100) + "%");
+                displayElements.Temperature.innerText = data.Temperature + "°C";
+                const convertUnits = (val) => {
+                    const units = ["Kb/s", "Mb/s", "Gb/s", "Tb/s", "Pb/s"];
+                    val = val * 8 / 1024.0;
+                    let i = 0;
+                    for (; i<units.length && val >= 1024; i++, val /= 1024.0);
+                    let s = val.toFixed(2);
+                    if (s.charAt(s.length - 1) === '0') s = s.substring(0, s.length - 1);
+                    if (s.charAt(s.length - 1) === '0') s = s.substring(0, s.length - 2);
+                    return s + units[i];
+                }
+                displayElements.Network.Recieved.innerHTML =
+                    "Recieved " + convertUnits(data.NetRecieved);
+                displayElements.Network.Sent.innerHTML =
+                    "Sent " + convertUnits(data.NetSent);
             });
         </script>
     </body>

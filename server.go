@@ -16,6 +16,11 @@ var server string
 func main() {
 	config := ParseConfig()
 
+	var data MonitorData
+	MonitorCpuUsage(&data.CpuUsage)
+	MonitorNetworkUsage(&data.NetRecieved, &data.NetSent)
+	MonitorTemperature(&data.Temperature)
+
     var cpuUsage [4]int
     MonitorCpuUsage(&cpuUsage)
 
@@ -24,12 +29,17 @@ func main() {
     go func() {
         for true {
             for _,s := range sockets {
+				/*
                 s.Emit("data", fmt.Sprintf("%c%c%c%c%c",
                     int(cpuUsage[0] / 100),
                     int(cpuUsage[1] / 100),
                     int(cpuUsage[2] / 100),
                     int(cpuUsage[3] / 100),
-                    int(GetTempurature())))
+                    int(GetTempurature())
+				))
+				*/
+				d,_ := json.Marshal(data)
+				s.Emit("data", d)
             }
             time.Sleep(1 * time.Second)
         }
@@ -56,6 +66,12 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 	log.Println("Serving at "+config.Server.GetURL()+"...")
 	log.Fatal(http.ListenAndServe(config.Server.GetURL(), nil))
+}
+
+type MonitorData struct {
+	CpuUsage [4]int
+	Temperature int
+	NetRecieved, NetSent uint64
 }
 
 type Config struct {

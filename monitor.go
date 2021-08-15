@@ -67,6 +67,15 @@ func GetTempurature() float64 {
     return float64(milicelcius) / 1000.0
 }
 
+func MonitorTemperature(temp *int) {
+    go func() {
+        for true {
+            *temp = int(GetTempurature())
+            time.Sleep(1 * time.Second)
+        }
+    }()
+}
+
 /**
  * starts a goroutine that populates the provided variable with network usage
  * data every second.
