@@ -109,7 +109,7 @@ func MonitorNetworkUsage(recieved, sent *uint64) {
                 s += uint64(x)
                 skip(9)
             }
-            defer file.Close()
+            file.Close()
             *recieved = r - totalRecieved
             *sent = s - totalSent
             totalRecieved = r
